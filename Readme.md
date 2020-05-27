@@ -8,6 +8,7 @@ Below are the current required permissions for this discovery script at the Appl
 
 - Team.ReadBasic.All
 - TeamsApp.Read.All
+- Group.Read.All
 
 ## Pending
 
