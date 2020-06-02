@@ -1,10 +1,9 @@
 
 
 
-$clientId = "25e730c4-3859-4619-b1d5-bd41ffbd9634"
+$clientId = "8f8de7db-273c-4190-9559-ee59167d176b"
 $clientSecret = ""
-$tenantName = "M365x107527.OnMicrosoft.com"
-$allEmployeesGroupId = "" #use this as the Azure AD group (can be sync'ed or cloud only) that contains all of the users we want to enumerate for custom Teams apps
+$tenantName = "kizan.OnMicrosoft.com"
 
 $ReqTokenBody = @{
     Grant_Type    = "client_credentials"
@@ -16,7 +15,7 @@ $TokenResponse = Invoke-RestMethod -Uri "https://login.microsoftonline.com/$Tena
 
 $getAllGroupsApiUrl = "https://graph.microsoft.com/beta/groups?`$filter=resourceProvisioningOptions/Any(x:x eq 'Team')"
 
-
+$getAllMembersOfGroupApiUrl = "https://graph.microsoft.com/v1.0/users?`$filter=userType eq 'Member'"
 
 function Invoke-GraphQuery {
     param (
@@ -68,7 +67,45 @@ do {
 } while ($moreTeamsToEnum)
 
 #to-do user enumeration and teams apps discovery per user
+$allUserApps = New-Object -TypeName "System.Collections.ArrayList"
 
+$allUsers = Invoke-GraphQuery -Uri $getAllMembersOfGroupApiUrl
+$usersToEnum = $true
+
+do {
+    $allUsers.value | ForEach-Object {
+
+        $userId = $_.id
+        $userEmail = $_.mail
+
+        $userAppsApiUrl = "https://graph.microsoft.com/beta/users/$userId/teamwork/installedApps?`$expand=teamsAppDefinition"
+
+        $userApps = Invoke-GraphQuery $userAppsApiUrl
+
+        $userApps.value | ForEach-Object {
+            $app = $_
+
+            $installedUserApp = New-Object -TypeName PSObject
+            $installedUserApp| Add-Member -Name "AppInstalledId" -Value $app.Id -MemberType NoteProperty 
+            $installedUserApp | Add-Member -Name "DisplayName" -MemberType NoteProperty  -Value $app.teamsAppDefinition.DisplayName
+            $installedUserApp | Add-Member -Name "TeamsAppId" -Value $app.teamsAppDefinition.teamsAppId -MemberType NoteProperty
+            $installedUserApp | Add-Member -Name "User" -MemberType NoteProperty  -Value $userId
+            $installedUserApp | Add-Member -Name "UserEmail" -MemberType NoteProperty -Value $userEmail
+    
+            $allUserApps.Add($installedUserApp)
+        }
+
+        if($null -ne $allUsers.'@odata.nextLink') {
+            $allUsers = Invoke-GraphQuery -Uri $allUsers.'@odata.nextLink'
+            $usersToEnum = $true
+        }
+        else {
+            $usersToEnum = $false
+        }
+    }
+} while($usersToEnum)
 
 $allTeamsApps | Group-Object -Property  DisplayName | Out-GridView
+
+$allUserApps | Group-Object -Property DisplayName | Out-GridView
 
