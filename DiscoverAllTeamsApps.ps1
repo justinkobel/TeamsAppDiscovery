@@ -1,9 +1,21 @@
 
+<#
+DISCLAIMER: 
+----------------------------------------------------------------
+This sample is provided as is and is not meant for use on a production environment.
+It is provided only for illustrative purposes. The end user must test and modify the
+sample to suit their target environment. 
+The script author can make no representation concerning the content of this script. 
+#>
 
+<#
+INSTRUCTIONS:
+Please see https://github.com/justinkobel/TeamsAppDiscovery
+#>
 
-$clientId = "8f8de7db-273c-4190-9559-ee59167d176b"
-$clientSecret = ""
-$tenantName = "kizan.OnMicrosoft.com"
+$clientId = "8f8de7db-273c-4190-9559-ee59167d176b" #appID from AAD app registration
+$clientSecret = "" #client secret from AAD app registration. see readme.md for required permissions
+$tenantName = "kizan.onmicrosoft.com" #insert your AAD tenant name here
 
 $ReqTokenBody = @{
     Grant_Type    = "client_credentials"
